@@ -1,0 +1,7 @@
+{
+    "name": "movieflixtv/api",
+    "description": "MovieFlixTV API Backend",
+    "require": {
+        "php": ">=7.4"
+    }
+}
