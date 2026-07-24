@@ -19,9 +19,6 @@ WORKDIR /var/www/html/
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html
 
-# iNSTALAR dependencias si existe composer.json
-RUN if [ -f composer.json ]; then composer install --no-dev --optimize-autoloader; fi
-
 # Expose port 80
 EXPOSE 80
 
