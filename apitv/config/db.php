@@ -3,12 +3,12 @@
  * MovieFlixTV - Database Configuration
  */
 
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'movieflix');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+define('DB_HOST', 'sql302.infinityfree.com');
+define('DB_NAME', 'if0_42012775_1movieflix_2');
+define('DB_USER', 'if0_42012775');
+define('DB_PASS', 'sQa5vi3rzrR33a');
 define('DB_CHARSET', 'utf8mb4');
-define('JWT_SECRET', 'your_secret_key_here_change_it');
+define('JWT_SECRET', 'https://1movie-flix.xo.je/');
 
 // Seguridad para evitar ensuciar el JSON
 error_reporting(0);
