@@ -1,16 +1,11 @@
 RewriteEngine On
+RewriteBase /
 
-# Ensure Authorization header is passed
-RewriteCond %{HTTP:Authorization} ^(.*)
-RewriteRule .* - [e:HTTP_AUTHORIZATION:%1]
-
-# Routes without .php extension
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^auth/login$ auth/login.php [L,QSA]
-RewriteRule ^auth/me$ auth/me.php [L,QSA]
-RewriteRule ^movies$ api/movies.php [L,QSA]
-RewriteRule ^series$ api/series.php [L,QSA]
-RewriteRule ^channels$ api/channels.php [L,QSA]
-RewriteRule ^profiles$ api/profiles.php [L,QSA]
-RewriteRule ^favorites$ api/favorites.php [L,QSA]
+# Redirecciones simples
+RewriteRule ^auth/login$ auth/login.php [L]
+RewriteRule ^auth/me$ auth/me.php [L]
+RewriteRule ^movies$ api/movies.php [L]
+RewriteRule ^series$ api/series.php [L]
+RewriteRule ^channels$ api/channels.php [L]
+RewriteRule ^profiles$ api/profiles.php [L]
+RewriteRule ^favorites$ api/favorites.php [L]
