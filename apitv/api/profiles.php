@@ -1,6 +1,6 @@
 <?php
 /**
- * MovieFlixTV - Profiles API
+ * MovieFlixTV - Profiles API (Robust Version)
  */
 
 require_once '../config/db.php';
@@ -13,7 +13,6 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
     try {
-        // Ensure country column exists or handle it gracefully
         $stmt = $db->prepare("SELECT * FROM profiles WHERE main_user_id = ?");
         $stmt->execute([$authUser['id']]);
         $profiles = $stmt->fetchAll();
@@ -35,22 +34,21 @@ if ($method === 'GET') {
     } catch (PDOException $e) {
         sendError("Database error: " . $e->getMessage(), 500);
     }
-} elseif ($method === 'PUT') {
-    $profileId = $_GET['id'] ?? null;
+} elseif ($method === 'PUT' || ($method === 'POST' && isset($_GET['action']) && $_GET['action'] == 'update')) {
+    // Capturar ID tanto de URL como de JSON
+    $input = getJsonInput();
+    $profileId = $_GET['id'] ?? ($input['id'] ?? null);
+
     if (!$profileId) {
         sendError("Profile ID is required");
     }
 
-    $input = getJsonInput();
     $name = $input['name'] ?? null;
     $color = $input['color'] ?? null;
     $country = $input['country'] ?? null;
 
-    if (!$name && !$color && !$country) {
-        sendError("Nothing to update");
-    }
-
     try {
+        // Verificar propiedad
         $stmt = $db->prepare("SELECT id FROM profiles WHERE id = ? AND main_user_id = ?");
         $stmt->execute([$profileId, $authUser['id']]);
         if (!$stmt->fetch()) {
@@ -63,17 +61,24 @@ if ($method === 'GET') {
         if ($color) { $fields[] = "avatar_color = ?"; $params[] = $color; }
         if ($country) { $fields[] = "country = ?"; $params[] = $country; }
 
+        if (empty($fields)) {
+            sendError("Nothing to update");
+        }
+
         $params[] = $profileId;
         $sql = "UPDATE profiles SET " . implode(", ", $fields) . " WHERE id = ?";
 
         $stmt = $db->prepare($sql);
-        $stmt->execute($params);
+        $result = $stmt->execute($params);
 
-        sendSuccess(null, "Profile updated successfully");
+        if ($result) {
+            sendSuccess(null, "Profile updated successfully");
+        } else {
+            sendError("Failed to update profile");
+        }
     } catch (PDOException $e) {
         sendError("Database error: " . $e->getMessage(), 500);
     }
 } else {
     sendError("Method not allowed", 405);
 }
-?>
