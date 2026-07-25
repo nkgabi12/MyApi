@@ -2,7 +2,7 @@
 // =========================
 // CONFIGURACIÓN
 // =========================
-$host   = "127.0.0.1";
+$host   = "151.80.4.227";
 $dbname = "moviefli_tvapi";
 $user   = "moviefli_user1";
 $pass   = "Fo&*@0C{d!j4*Ut0";
