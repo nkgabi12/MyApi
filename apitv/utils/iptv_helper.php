@@ -50,15 +50,16 @@ class IPTVHelper {
         $formatted = [];
         foreach ($data as $item) {
             $name = $item['name'] ?? 'Unknown';
-            $country = self::guessCountry($name);
+            $countryInfo = self::extractCountryAndName($name);
+            $country = $countryInfo['country'];
+            $cleanName = $countryInfo['name'];
 
-            // Build the stream URL and wrap it with our proxy
             $originalUrl = $p['server'] . "/live/" . $p['user'] . "/" . $p['pass'] . "/" . $item['stream_id'] . ".m3u8";
-            $proxyUrl = "https://myapi-i5wf.onrender.com/api/proxy.php?url=" . urlencode($originalUrl);
+            $proxyUrl = "https://myapi-i5wf.onrender.com/proxy?url=" . urlencode($originalUrl);
 
             $formatted[] = [
                 "id" => $p['name'] . "_" . $item['stream_id'],
-                "name" => $name . " (" . $p['name'] . ")",
+                "name" => $cleanName . " (" . $p['name'] . ")",
                 "description" => $item['category_name'] ?? "",
                 "logo_url" => $item['stream_icon'] ?? "",
                 "stream_url" => $proxyUrl,
@@ -70,13 +71,22 @@ class IPTVHelper {
         return $formatted;
     }
 
-    private static function guessCountry($name) {
-        $name = strtoupper($name);
-        if (strpos($name, 'AR:') !== false || strpos($name, 'ARGENTINA') !== false) return 'Argentina';
-        if (strpos($name, 'MX:') !== false || strpos($name, 'MEXICO') !== false) return 'Mexico';
-        if (strpos($name, 'ES:') !== false || strpos($name, 'ESPAÑA') !== false) return 'España';
-        if (strpos($name, 'US:') !== false || strpos($name, 'USA') !== false) return 'USA';
-        return 'Otros';
+    private static function extractCountryAndName($name) {
+        $name = trim($name);
+        $country = 'Otros';
+
+        // Very strict matching for countries at the beginning
+        if (preg_match('/^\[AR\]|^AR[:\s\-]|ARGENTINA/i', $name)) { $country = 'Argentina'; }
+        elseif (preg_match('/^\[MX\]|^MX[:\s\-]|MEXICO/i', $name)) { $country = 'Mexico'; }
+        elseif (preg_match('/^\[ES\]|^ES[:\s\-]|ESP/i', $name)) { $country = 'España'; }
+        elseif (preg_match('/^\[US\]|^US[:\s\-]|USA/i', $name)) { $country = 'USA'; }
+        elseif (preg_match('/^\[CL\]|^CL[:\s\-]|CHILE/i', $name)) { $country = 'Chile'; }
+        elseif (preg_match('/^\[CO\]|^CO[:\s\-]|COLOMBIA/i', $name)) { $country = 'Colombia'; }
+
+        // Clean name (remove the tag but keep the rest)
+        $cleanName = preg_replace('/^(\[.*?\]|.*?[:\-\|])\s*/', '', $name);
+        if (empty($cleanName)) $cleanName = $name;
+
+        return ['country' => $country, 'name' => trim($cleanName)];
     }
 }
-?>
