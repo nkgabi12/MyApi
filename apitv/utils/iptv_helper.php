@@ -1,6 +1,6 @@
 <?php
 /**
- * MovieFlixTV - Multi-Provider IPTV Helper
+ * MovieFlixTV - Fast Multi-Provider IPTV Helper
  */
 
 require_once __DIR__ . '/../config/iptv.php';
@@ -16,9 +16,14 @@ class IPTVHelper {
         $allChannels = [];
 
         foreach ($IPTV_PROVIDERS as $provider) {
-            $channels = self::fetchFromProvider($provider);
-            if ($channels) {
-                $allChannels = array_merge($allChannels, $channels);
+            try {
+                $channels = self::fetchFromProvider($provider);
+                if ($channels) {
+                    $allChannels = array_merge($allChannels, $channels);
+                }
+            } catch (Exception $e) {
+                // Skip failing providers to keep API alive
+                continue;
             }
         }
 
@@ -39,7 +44,7 @@ class IPTVHelper {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $streamsUrl);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 8); // Fast timeout
         $response = curl_exec($ch);
         curl_close($ch);
 
@@ -50,43 +55,42 @@ class IPTVHelper {
         $formatted = [];
         foreach ($data as $item) {
             $name = $item['name'] ?? 'Unknown';
-            $countryInfo = self::extractCountryAndName($name);
-            $country = $countryInfo['country'];
-            $cleanName = $countryInfo['name'];
+            $info = self::extractCountry($name);
 
-            $originalUrl = $p['server'] . "/live/" . $p['user'] . "/" . $p['pass'] . "/" . $item['stream_id'] . ".m3u8";
-            $proxyUrl = "https://myapi-i5wf.onrender.com/proxy?url=" . urlencode($originalUrl);
+            // Return ORIGINAL URL to keep JSON small and generation fast
+            $streamUrl = $p['server'] . "/live/" . $p['user'] . "/" . $p['pass'] . "/" . $item['stream_id'] . ".m3u8";
 
             $formatted[] = [
                 "id" => $p['name'] . "_" . $item['stream_id'],
-                "name" => $cleanName . " (" . $p['name'] . ")",
-                "description" => $item['category_name'] ?? "",
+                "name" => $info['name'] . " (" . $p['name'] . ")",
                 "logo_url" => $item['stream_icon'] ?? "",
-                "stream_url" => $proxyUrl,
-                "country" => $country,
-                "category" => $item['category_name'] ?? "General",
-                "provider" => $p['name']
+                "stream_url" => $streamUrl,
+                "country" => $info['country'],
+                "category" => $item['category_name'] ?? "General"
             ];
         }
         return $formatted;
     }
 
-    private static function extractCountryAndName($name) {
+    private static function extractCountry($name) {
         $name = trim($name);
         $country = 'Otros';
 
-        // Very strict matching for countries at the beginning
-        if (preg_match('/^\[AR\]|^AR[:\s\-]|ARGENTINA/i', $name)) { $country = 'Argentina'; }
-        elseif (preg_match('/^\[MX\]|^MX[:\s\-]|MEXICO/i', $name)) { $country = 'Mexico'; }
-        elseif (preg_match('/^\[ES\]|^ES[:\s\-]|ESP/i', $name)) { $country = 'España'; }
-        elseif (preg_match('/^\[US\]|^US[:\s\-]|USA/i', $name)) { $country = 'USA'; }
-        elseif (preg_match('/^\[CL\]|^CL[:\s\-]|CHILE/i', $name)) { $country = 'Chile'; }
-        elseif (preg_match('/^\[CO\]|^CO[:\s\-]|COLOMBIA/i', $name)) { $country = 'Colombia'; }
+        // Improved Regex for countries
+        if (preg_match('/^(AR|ARG|ARGENTINA)[:\-\s\[\]]/i', $name)) { $country = 'Argentina'; }
+        elseif (preg_match('/^(MX|MEX|MEXICO)[:\-\s\[\]]/i', $name)) { $country = 'Mexico'; }
+        elseif (preg_match('/^(ES|ESP|ESPAÑA)[:\-\s\[\]]/i', $name)) { $country = 'España'; }
+        elseif (preg_match('/^(US|USA)[:\-\s\[\]]/i', $name)) { $country = 'USA'; }
+        elseif (preg_match('/^(CL|CHILE)[:\-\s\[\]]/i', $name)) { $country = 'Chile'; }
+        elseif (preg_match('/^(CO|COLOMBIA)[:\-\s\[\]]/i', $name)) { $country = 'Colombia'; }
 
-        // Clean name (remove the tag but keep the rest)
-        $cleanName = preg_replace('/^(\[.*?\]|.*?[:\-\|])\s*/', '', $name);
-        if (empty($cleanName)) $cleanName = $name;
+        // Remove prefix
+        $cleanName = preg_replace('/^.*?[:\-\|]\s*/', '', $name);
+        if (empty($cleanName) || $cleanName == $name) {
+            $cleanName = preg_replace('/^\[.*?\]\s*/', '', $name);
+        }
 
         return ['country' => $country, 'name' => trim($cleanName)];
     }
 }
+?>
