@@ -1,6 +1,6 @@
 <?php
 /**
- * MovieFlixTV - Ultra Fast IPTV Helper
+ * MovieFlixTV - Direct IPTV Helper
  */
 
 require_once __DIR__ . '/../config/iptv.php';
@@ -49,15 +49,37 @@ class IPTVHelper {
 
         $formatted = [];
         foreach ($data as $item) {
-            // Raw mapping for maximum speed
+            $name = $item['name'] ?? 'Unknown';
+            $info = self::extractCountry($name);
+
+            // VOLVEMOS A LA URL DIRECTA
+            $streamUrl = $p['server'] . "/live/" . $p['user'] . "/" . $p['pass'] . "/" . $item['stream_id'] . ".m3u8";
+
             $formatted[] = [
                 "id" => $p['name'] . "_" . $item['stream_id'],
-                "name" => $item['name'] ?? 'Unknown',
+                "name" => $info['name'] . " (" . $p['name'] . ")",
                 "logo" => $item['stream_icon'] ?? "",
-                "url" => $p['server'] . "/live/" . $p['user'] . "/" . $p['pass'] . "/" . $item['stream_id'] . ".m3u8",
+                "url" => $streamUrl,
                 "cat" => $item['category_name'] ?? "General"
             ];
         }
         return $formatted;
     }
+
+    private static function extractCountry($name) {
+        $name = trim($name);
+        $country = 'Otros';
+        if (preg_match('/^(AR|ARGENTINA)[:\-\s\[\]]/i', $name)) { $country = 'ARGENTINA'; }
+        elseif (preg_match('/^(MX|MEXICO)[:\-\s\[\]]/i', $name)) { $country = 'MEXICO'; }
+        elseif (preg_match('/^(ES|ESP)[:\-\s\[\]]/i', $name)) { $country = 'ESPAÑA'; }
+        elseif (preg_match('/^(US|USA)[:\-\s\[\]]/i', $name)) { $country = 'USA'; }
+
+        $cleanName = preg_replace('/^.*?[:\-\|]\s*/', '', $name);
+        if (empty($cleanName) || $cleanName == $name) {
+            $cleanName = preg_replace('/^\[.*?\]\s*/', '', $name);
+        }
+
+        return ['country' => $country, 'name' => trim($cleanName)];
+    }
 }
+?>
