@@ -63,5 +63,41 @@ class IPTVHelper {
         }
         return $formatted;
     }
+
+    public static function getMovies($serverNum = "1") {
+    global $IPTV_PROVIDERS;
+    $p = $IPTV_PROVIDERS[$serverNum - 1]; // Seleccionamos el proveedor
+
+    $loginUrl = $p['server'] . "/player_api.php?username=" . $p['user'] . "&password=" . $p['pass'];
+    $moviesUrl = $loginUrl . "&action=get_vod_streams";
+
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $moviesUrl);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    if (!$response) return [];
+    $data = json_decode($response, true);
+    if (!is_array($data)) return [];
+
+    $formatted = [];
+    foreach ($data as $item) {
+        // La URL de películas suele ser /movie/USER/PASS/ID.EXTENSION
+        $extension = $item['container_extension'] ?? 'mp4';
+        $movieUrl = $p['server'] . "/movie/" . $p['user'] . "/" . $p['pass'] . "/" . $item['stream_id'] . "." . $extension;
+
+        $formatted[] = [
+            "id" => $item['stream_id'],
+            "title" => $item['name'],
+            "poster_url" => $item['stream_icon'] ?? "",
+            "video_url" => $movieUrl,
+            "description" => "Añadida el: " . ($item['added'] ?? 'Reciente'),
+            "rating" => $item['rating'] ?? "N/A"
+        ];
+    }
+    return $formatted;
+}
 }
 ?>
