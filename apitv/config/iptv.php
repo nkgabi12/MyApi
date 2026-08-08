@@ -6,9 +6,9 @@
 $IPTV_PROVIDERS = [
     [
         "name" => "SV1",
-        "server" => "http://livetv-plus.com:2082/",
-        "user" => "kfS8c",
-        "pass" => "VNMAE"
+        "server" => "http://31.43.191.125:8080/",
+        "user" => "VIP011651756141415591",
+        "pass" => "fdc0fd87f83a"
     ];
 
 define('IPTV_CACHE_TIME', 3600);
